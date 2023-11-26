@@ -1,6 +1,8 @@
 # functions ---------------------------------------------------------------
 
-clean_data <- function(df){
+clean_data <- function(df, type = c("long", "wide")){
+  
+  type <- match.arg(type)
   
   # Extract years from df - both sheets were in row 2
   
@@ -30,9 +32,39 @@ clean_data <- function(df){
     pivot_longer(cols = -Firms, 
                  names_to = c("Variable", "Year"),
                  names_pattern = "(.*)\\.(\\d+)") %>% 
-    mutate(across(.cols = c(Year, value), as.numeric))
+    mutate(value = as.numeric(value), 
+           Year = as.Date(Year, format = "%Y"))
+    # mutate(across(.cols = c(Year, value), as.numeric))
   
+  if (type == "wide"){
+    
+    wide_df <- tidy_df %>% 
+      pivot_wider(names_from = Variable, 
+                  values_from = value)
+    
+    return(wide_df)
+    
+    
+  } 
+    
+    
+    
+    
   return(tidy_df)
+
   
+  
+}
+
+
+calculate_changes <- function(df){
+  
+  df <- df %>% 
+    group_by(Firms) %>% 
+    mutate(across(c(where(is.numeric), -Year), ~ . -lag(.), .names = "{col} Change"), 
+           across(c(where(is.numeric), -Year), ~ . / abs(lag(.)) - 1, .names = "{col} % Change")) %>% 
+    ungroup()
+  
+  return(df)
   
 }

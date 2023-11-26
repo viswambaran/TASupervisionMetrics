@@ -1,0 +1,335 @@
+---
+title: "Supervisory Resource Allocation Report"
+author: "Dylan Viswambaran"
+date: "27/11/2023"
+output: 
+  html_document:
+    toc: true
+    toc_float: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      warning = FALSE, 
+                      message = FALSE)
+```
+
+
+```{r load_data}
+
+source("R/main.R")
+
+```
+
+## Firms Overview 
+
+To get an idea of the firms in the data. Below is a section to give a overview of the largest firms, how their profile evolves and any firms that stand out compared to its peers. 
+
+
+
+### Gross Written Premium
+
+Focusing on the latest year here are the top 5 firms by their Gross Written Premium (GWP):  
+```{r GWP }
+
+## Previous years average for comparison 
+prevtop5Avg <-
+  condensed_table_changes_long %>%
+  # filter(Year == max(Year) - 1) %>% 
+  group_by(Metric, Year) %>% 
+  slice_max(value, n = 5) %>% 
+  summarise(Average = mean(value, na.rm = TRUE)) %>% 
+  ungroup()
+
+GWPAvg <- prevtop5Avg %>% 
+  filter(Metric == "GWP (£m)") %>% 
+  slice_max(Year, n = 2) 
+
+## Latest year chart and table 
+
+
+
+latestTop5GWP <- condensed_table_changes_long %>%
+  filter(Year == max(Year),
+         Metric == "GWP (£m)") %>%
+  slice_max(value, n = 5)
+
+
+
+## Plot
+latestTop5GWP %>%
+    ggplot(aes(x = reorder(Firms, -value),
+               y = value)) +
+    geom_bar(stat = "identity",
+             position = position_dodge2(),
+             fill = boe_brand_main$boe_aqua) +
+    boeCharts::theme_boe_identity_md() +
+    scale_y_continuous(labels = label_currency()) +
+    labs(x = "Firm",
+         y = "GWP (£m)",
+         title = "Top 5 Firms by Gross Written Premium") + 
+    coord_flip() +
+    geom_hline(yintercept = GWPAvg$Average[1], linetype = "dashed", color = "red") +
+    annotate("text", x = Inf, y = GWPAvg$Average[1], label = "2020 Average (Top 5)", color = "red", hjust = -0.75, vjust = 3.5) +
+    geom_hline(yintercept = GWPAvg$Average[2], linetype = "dashed", color = "yellow") +
+    annotate("text", x = Inf, y = GWPAvg$Average[2], label = "2019 Average (Top 5)", color = "yellow", hjust = -0.73, vjust = 8.5)
+
+
+## Table
+latestTop5GWP %>% 
+  select(-Metric) %>% 
+  rename(`£mn` = value) %>% 
+  kable(caption = "Top 5 Firms by Gross Written Premium") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                full_width = TRUE)
+  
+
+  
+
+
+```
+Looking at firm sizes on the average over the past few years. This will give an indication of the size of the firm over time and not just focusing on a particularly good (or bad) year. 
+
+```{r GWPAvg}
+
+top5AverageGWP <- condensed_table_changes_long %>%
+  group_by(Firms, Metric) %>%
+  summarise(Average = mean(value)) %>%
+  ungroup() %>%
+  filter(Metric == "GWP (£m)") %>%
+  slice_max(Average, n = 5)
+
+
+## Plotting average 
+top5AverageGWP %>% 
+  ggplot(aes(x = reorder(Firms, -Average),
+             y = Average)) +
+  geom_bar(stat = "identity",
+           position = position_dodge2(),
+           fill = boe_brand_main$boe_aqua) +
+  boeCharts::theme_boe_identity_md() +
+  scale_y_continuous(labels = label_currency()) +
+  labs(x = "Firm",
+       y = "GWP (£m)",
+       title = "Top 5 Firms by Average Gross Written Premium") + 
+  coord_flip()
+
+top5AverageGWP %>% 
+  select(-Metric) %>% 
+  rename(`£mn` = Average) %>% 
+  kable(caption = "Top 5 Firms by Average Gross Written Premium") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                full_width = TRUE)
+  
+
+```
+
+```{r GWPChanges}
+# 
+# condensed_table_changes_long %>% 
+#   filter(!is.infinite(value), grepl("GWP.%*|NWP|SCR|Gross claims incurred|net combined", Metric, ignore.case = TRUE)) %>% 
+#   slice_max(value, n = 5)
+#   
+# 
+# condensed_table_changes %>% 
+#   select(Firms, Year, matches("GWP|NWP|SCR|Gross claims incurred|net combined")) %>% 
+#   pivot_longer()
+
+
+```
+
+### Net Written Premium 
+
+
+
+```{r NWP}
+
+NWPAvg <- prevtop5Avg %>% 
+  filter(Metric == "NWP (£m)") %>% 
+  slice_max(Year, n = 2) 
+
+## Latest year chart and table 
+
+
+
+latestTop5NWP <- condensed_table_changes_long %>%
+  filter(Year == max(Year),
+         Metric == "NWP (£m)") %>%
+  slice_max(value, n = 5)
+
+
+
+## Plot
+latestTop5NWP %>%
+    ggplot(aes(x = reorder(Firms, -value),
+               y = value)) +
+    geom_bar(stat = "identity",
+             position = position_dodge2(),
+             fill = boe_brand_main$boe_aqua) +
+    boeCharts::theme_boe_identity_md() +
+    scale_y_continuous(labels = label_currency()) +
+    labs(x = "Firm",
+         y = "NWP (£m)",
+         title = "Top 5 Firms by Net Written Premium") + 
+    coord_flip() +
+    geom_hline(yintercept = NWPAvg$Average[1], linetype = "dashed", color = "red") +
+    annotate("text", x = Inf, y = NWPAvg$Average[1], label = "2020 Average (Top 5)", color = "red", hjust = -0.75, vjust = 3.5) +
+    geom_hline(yintercept = NWPAvg$Average[2], linetype = "dashed", color = "yellow") +
+    annotate("text", x = Inf, y = NWPAvg$Average[2], label = "2019 Average (Top 5)", color = "yellow", hjust = -0.73, vjust = 8.5)
+
+
+## Table
+latestTop5NWP %>% 
+  select(-Metric) %>% 
+  rename(`£mn` = value) %>% 
+  kable(caption = "Top 5 Firms by Net Written Premium") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                full_width = TRUE)
+  
+
+
+
+
+
+
+```
+### Gross claims incurred
+
+```{r claims}
+
+ClaimsAvg <- prevtop5Avg %>% 
+  filter(Metric == "Gross claims incurred (£m)") %>% 
+  slice_max(Year, n = 2) 
+
+## Latest year chart and table 
+
+
+
+latestTop5Claims <- condensed_table_changes_long %>%
+  filter(Year == max(Year),
+         Metric == "Gross claims incurred (£m)") %>%
+  slice_max(value, n = 5)
+
+
+
+## Plot
+latestTop5Claims %>%
+    ggplot(aes(x = reorder(Firms, -value),
+               y = value)) +
+    geom_bar(stat = "identity",
+             position = position_dodge2(),
+             fill = boe_brand_main$boe_aqua) +
+    boeCharts::theme_boe_identity_md() +
+    scale_y_continuous(labels = label_currency()) +
+    labs(x = "Firm",
+         y = "Gross claims incurred (£m)",
+         title = "Top 5 Firms by Gross claims incurred") + 
+    coord_flip() +
+    geom_hline(yintercept = ClaimsAvg$Average[1], linetype = "dashed", color = "red") +
+    annotate("text", x = Inf, y = ClaimsAvg$Average[1], label = "2020 Average (Top 5)", color = "red", hjust = -0.75, vjust = 3.5) +
+    geom_hline(yintercept = ClaimsAvg$Average[2], linetype = "dashed", color = "yellow") +
+    annotate("text", x = Inf, y = ClaimsAvg$Average[2], label = "2019 Average (Top 5)", color = "yellow", hjust = -0.73, vjust = 8.5)
+
+
+## Table
+latestTop5Claims %>% 
+  select(-Metric) %>% 
+  rename(`£mn` = value) %>% 
+  kable(caption = "Top 5 Firms by Gross claims incurred") %>% 
+  kable_styling(bootstrap_options = c("striped", "hover"), 
+                full_width = TRUE)
+
+
+## Changes over time 
+
+claimChanges <- 
+  condensed_table_changes_long %>%
+  filter(Metric %in% c("Gross claims incurred (£m)", "Gross claims incurred (£m) % Change"), Firms %in% c(latestTop5Claims$Firms))
+
+claimpctChangetop5 <- 
+condensed_table_changes_long %>% 
+    filter(Metric == "Gross claims incurred (£m) % Change", 
+           Year == max(Year), !is.infinite(value)) %>% 
+    slice_max(value, n = 5)
+
+top5pctChangeOverTime  <- 
+  condensed_table_changes_long %>% 
+  filter(Metric == "Gross claims incurred (£m) % Change", Firms %in% c(claimpctChangetop5$Firms), !is.na(value))
+
+
+# Nominal change plot 
+
+claimChanges %>% 
+    filter(Metric == "Gross claims incurred (£m)") %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() +
+  # theme_minimal() +
+  facet_wrap(~ Firms) +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "£mns",
+    title = "Top 5 Gross claims incurred (£mn) nominal changes"
+  ) + 
+  scale_x_continuous(guide = guide_axis(n.dodge = 2))
+
+
+
+# Percent change in focus chart
+top5pctChangeOverTime  %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() + 
+  facet_wrap(~ Firms) +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "% Change",
+    title = "Top 5 Gross claims incurred % changes"
+  )
+
+
+
+
+```
+
+
+
+
+### Net combined ratio
+
+This ratio can indicate a firms profitability. A Ratio of less than 100% can indicate that firm is in profit.
+```{r NetcombinedRatio}
+
+# Ratio to indicate profitability of a frim 
+
+
+NCR <- condensed_table_changes_long %>% 
+  filter(grepl("net combined ratio", Metric, ignore.case = TRUE))
+
+NCRtoplosses <- NCR %>% 
+  filter(grepl("ratio$", Metric), !is.na(value), !is.infinite(value), Year == max(Year), value > 100)
+  
+NCRtoplosses %>% 
+    ggplot(aes(x = reorder(Firms, -value),
+               y = value,
+               fill = Firms)) +
+    geom_bar(stat = "identity",
+             position = position_dodge2()) + 
+  theme_boe_identity(legend_position = "none") + 
+  labs(x = "Firm",
+       y = "Net Combined Ratio",
+       title = "Firms with low profitability")
+```
+
