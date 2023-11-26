@@ -68,3 +68,19 @@ calculate_changes <- function(df){
   return(df)
   
 }
+
+
+outlier_detector <- function(df, column){
+  
+  Q1 <- quantile(df[[column]], 0.25, na.rm=TRUE)
+  Q3 <- quantile(df[[column]], 0.75, na.rm=TRUE)
+  IQR <- Q3 - Q1
+  
+  lower <- Q1 - 1.5 * IQR
+  upper <- Q3 + 1.5 * IQR
+  
+  outliers <- df %>% 
+    filter(df[[column]] < lower | df[[column]] > upper)
+  
+  return(outliers)
+}

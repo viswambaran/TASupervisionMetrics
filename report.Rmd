@@ -290,7 +290,7 @@ top5pctChangeOverTime  %>%
     ) + 
     geom_line() + 
   theme_boe_identity_md() + 
-  facet_wrap(~ Firms) +
+  facet_wrap(~ Firms, scales = "free_y") +
   theme(
     legend.position = "none"
   ) + 
@@ -331,5 +331,59 @@ NCRtoplosses %>%
   labs(x = "Firm",
        y = "Net Combined Ratio",
        title = "Firms with low profitability")
+```
+## Outlier analysis 
+
+```{r}
+
+# outlier_detector(condensed_table_changes_long, "value") %>%
+#   pivot_wider(names_from = Metric, values_from = value) %>% 
+#   kable(caption = "Table of outliers within dataset") %>% 
+#   kable_styling(bootstrap_options = c("striped", "hover"), 
+#                 full_width = TRUE)
+
+
+
+
+condensed_table_changes_long %>%
+  filter(!grepl("Change", Metric, ignore.case = TRUE)) %>% 
+  ggplot(aes(
+    x = Metric, 
+    y = value
+  )) + 
+  geom_boxplot() +
+  facet_wrap(~Metric, scales = "free") + 
+  theme_minimal()
+
+## Scatter plot to identify outliers visually 
+condensed_table_changes_long %>%
+  filter(!grepl("Change", Metric, ignore.case = TRUE)) %>% 
+  ggplot(
+    aes(
+      x = Year,
+      y = value, 
+      color = Firms
+    )
+  ) + 
+  geom_point() + 
+  facet_wrap(~ Metric, scales = "free", ncol = 3, ) + 
+  theme_minimal() + 
+  theme(legend.position = "none")
+
+## Focussing on latest year 
+condensed_table_changes_long %>%
+  filter(!grepl("Change", Metric, ignore.case = TRUE), Year == max(Year)) %>% 
+  ggplot(
+    aes(
+      x = Firms,
+      y = value, 
+      color = Metric
+    )
+  ) + 
+  geom_point() + 
+  facet_wrap(~ Metric, scales = "free", ncol = 3, ) +
+  theme_minimal() + 
+  theme(legend.position = "none") 
+
 ```
 
