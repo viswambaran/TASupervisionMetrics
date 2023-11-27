@@ -20,8 +20,32 @@ knitr::opts_chunk$set(echo = FALSE,
 source("R/main.R")
 
 ```
+This report outlines an overview of the top insurance industry performers, noting various measures such as Gross Written Premium, Net Written Premium,  Gross Claims Incurred, as well as various other ratios.  K-means clustering has also been used a machine learning tool to clusters and predict claims.  
+
 
 ## Firms Overview 
+
+### Metrics Overview 
+
+```{python}
+import pandas as pd 
+
+
+df_overview =  pd.read_csv("general.csv")
+summary = df_overview.pivot_table(index='Firms', columns='Variable', values ='value', fill_value=0).describe()
+
+```
+
+
+```{r}
+library(reticulate)
+py$summary %>% 
+  kable() %>% 
+  kable_styling()
+
+```
+
+
 
 To get an idea of the firms in the data. Below is a section to give a overview of the largest firms, how their profile evolves and any firms that stand out compared to its peers. 
 
@@ -67,7 +91,7 @@ latestTop5GWP %>%
     scale_y_continuous(labels = label_currency()) +
     labs(x = "Firm",
          y = "GWP (£m)",
-         title = "Top 5 Firms by Gross Written Premium") + 
+         title = "Top 5 Firms by Gross Written Premium (2020)") + 
     coord_flip() +
     geom_hline(yintercept = GWPAvg$Average[1], linetype = "dashed", color = "red") +
     annotate("text", x = Inf, y = GWPAvg$Average[1], label = "2020 Average (Top 5)", color = "red", hjust = -0.75, vjust = 3.5) +
@@ -125,15 +149,67 @@ top5AverageGWP %>%
 ```
 
 ```{r GWPChanges}
-# 
-# condensed_table_changes_long %>% 
-#   filter(!is.infinite(value), grepl("GWP.%*|NWP|SCR|Gross claims incurred|net combined", Metric, ignore.case = TRUE)) %>% 
-#   slice_max(value, n = 5)
-#   
-# 
-# condensed_table_changes %>% 
-#   select(Firms, Year, matches("GWP|NWP|SCR|Gross claims incurred|net combined")) %>% 
-#   pivot_longer()
+
+## Changes over time 
+
+GWPChanges <- 
+  condensed_table_changes_long %>%
+  filter(Metric %in% c("GWP (£m)", "GWP % Change"), Firms %in% c(latestTop5GWP$Firms))
+
+GWPpctChangetop5 <- 
+condensed_table_changes_long %>% 
+    filter(Metric == "GWP (£m) % Change", 
+           Year == max(Year), !is.infinite(value)) %>% 
+    slice_max(value, n = 5)
+
+top5pctChangeOverTime  <- 
+  condensed_table_changes_long %>% 
+  filter(Metric == "GWP (£m) % Change", Firms %in% c(GWPpctChangetop5$Firms), !is.na(value))
+
+
+# Nominal change plot 
+
+GWPChanges %>% 
+    filter(Metric == "GWP (£m)") %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() +
+  # theme_minimal() +
+  facet_wrap(~ Firms) +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "£mns",
+    title = "Top 5 GWP (£mn) nominal changes"
+  ) + 
+  scale_x_date(guide = guide_axis(n.dodge = 2))
+
+
+
+# Percent change in focus chart
+top5pctChangeOverTime  %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() + 
+  facet_wrap(~ Firms, scales = "free_y") +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "% Change",
+    title = "Top 5 Gross claims incurred % changes"
+  )
+
+
 
 
 ```
@@ -193,6 +269,69 @@ latestTop5NWP %>%
 
 
 ```
+```{r}
+## Changes over time 
+
+NWPChanges <- 
+  condensed_table_changes_long %>%
+  filter(Metric %in% c("NWP (£m)", "NWP % Change"), Firms %in% c(latestTop5NWP$Firms))
+
+NWPpctChangetop5 <- 
+condensed_table_changes_long %>% 
+    filter(Metric == "NWP (£m) % Change", 
+           Year == max(Year), !is.infinite(value)) %>% 
+    slice_max(value, n = 5)
+
+top5pctChangeOverTime  <- 
+  condensed_table_changes_long %>% 
+  filter(Metric == "NWP (£m) % Change", Firms %in% c(NWPpctChangetop5$Firms), !is.na(value))
+
+
+# Nominal change plot 
+
+NWPChanges %>% 
+    filter(Metric == "NWP (£m)") %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() +
+  # theme_minimal() +
+  facet_wrap(~ Firms) +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "£mns",
+    title = "Top 5 NWP (£mn) nominal changes"
+  ) + 
+  scale_x_date(guide = guide_axis(n.dodge = 2))
+
+
+
+# Percent change in focus chart
+top5pctChangeOverTime  %>% 
+    ggplot(
+        aes(x = Year, 
+            y = value, 
+            color = Firms)
+    ) + 
+    geom_line() + 
+  theme_boe_identity_md() + 
+  facet_wrap(~ Firms, scales = "free_y") +
+  theme(
+    legend.position = "none"
+  ) + 
+  labs(
+    y = "% Change",
+    title = "Top 5 Gross claims incurred % changes"
+  )
+```
+
+
+
 ### Gross claims incurred
 
 ```{r claims}
@@ -277,7 +416,7 @@ claimChanges %>%
     y = "£mns",
     title = "Top 5 Gross claims incurred (£mn) nominal changes"
   ) + 
-  scale_x_continuous(guide = guide_axis(n.dodge = 2))
+  scale_x_date(guide = guide_axis(n.dodge = 2))
 
 
 
@@ -309,7 +448,9 @@ top5pctChangeOverTime  %>%
 
 ### Net combined ratio
 
-This ratio can indicate a firms profitability. A Ratio of less than 100% can indicate that firm is in profit.
+This ratio can indicate a firms profitability. A Ratio of less than 100% can indicate that firm is in profit.  
+
+The plot here shows that of very large Net Combined Ratios indicating substantial losses - it is highly likely that these 3 datapoints are errornous and require investigation
 ```{r NetcombinedRatio}
 
 # Ratio to indicate profitability of a frim 
@@ -331,8 +472,47 @@ NCRtoplosses %>%
   labs(x = "Firm",
        y = "Net Combined Ratio",
        title = "Firms with low profitability")
+
+
+
+
+
+
+## Combined NCR and NWP 
+
+
+# NWPNCR <- condensed_table_changes_long %>% 
+#   filter(Metric %in%  c("NWP (£m)", "Net combined ratio"))
+# 
+# 
+# NWPNCR %>% 
+#   ggplot(
+#     aes(x = Year, 
+#         y = value)
+#   ) + 
+#   geom_line()
+
 ```
 ## Outlier analysis 
+
+
+Table with all suspected outliers - IQR method was used to determine outliers in this context. Any data points 1.5x the IQR were considered to be outliers initially, further refinement and investigations would be neccesary to understand if these are true outliers. 
+```{r}
+
+outlier_table <- outlier_detector(condensed_table)
+
+outliers <- which(apply(outlier_table, 1, function(x) any(x == TRUE)) )
+
+outlier_table %>% 
+  DT::datatable()
+  # kable() %>% 
+  #   kable_styling(
+  #     bootstrap_options = c("striped", "hover"),
+  #     full_width = T,
+  #     font_size = 10.5) %>% 
+  # row_spec(outliers, background = "red")
+```
+
 
 ```{r}
 
@@ -345,15 +525,29 @@ NCRtoplosses %>%
 
 
 
+# condensed_table_changes_long %>%
+#   filter(!grepl("Change", Metric, ignore.case = TRUE)) %>% 
+#   ggplot(aes(
+#     x = Metric, 
+#     y = value
+#   )) + 
+#   geom_boxplot() +
+#   facet_wrap(~Metric, scales = "free") + 
+#   theme_minimal()
+
+
+# boxplot latest
 condensed_table_changes_long %>%
-  filter(!grepl("Change", Metric, ignore.case = TRUE)) %>% 
+  filter(!grepl("Change", Metric, ignore.case = TRUE), Year == max(Year)) %>% 
   ggplot(aes(
     x = Metric, 
     y = value
   )) + 
-  geom_boxplot() +
+  geom_boxplot(outlier.color = "red", ) +
   facet_wrap(~Metric, scales = "free") + 
-  theme_minimal()
+  theme_minimal() + 
+  ggtitle("Boxplot for year 2020 data by Metric")
+
 
 ## Scatter plot to identify outliers visually 
 condensed_table_changes_long %>%
@@ -368,7 +562,8 @@ condensed_table_changes_long %>%
   geom_point() + 
   facet_wrap(~ Metric, scales = "free", ncol = 3, ) + 
   theme_minimal() + 
-  theme(legend.position = "none")
+  theme(legend.position = "none") +
+  ggtitle("Scatter plot by Metric per year")
 
 ## Focussing on latest year 
 condensed_table_changes_long %>%
@@ -383,7 +578,145 @@ condensed_table_changes_long %>%
   geom_point() + 
   facet_wrap(~ Metric, scales = "free", ncol = 3, ) +
   theme_minimal() + 
-  theme(legend.position = "none") 
+  theme(legend.position = "none") +
+  ggtitle("Scatter plot for Metric in Year 2020")
 
 ```
+  
+  
+  
+In The above  scatterplot for the year 2020 it is clear to note that in several variable the data looks as thought it is either incorrectly calculated or simply reported incorrectly. 
+
+SCR coverage ratio and Net combined ratio in particular stand out. 
+
+In the boxplot graphs there are a significant number of datapoints that are considered outliers by the IQR test ( 1.5 * IQR) and hence the boxplot is displaying mainly those outliers given the figures are much larger than the average values for each class. 
+
+
+
+  
+## Machine Learning 
+
+### K Means Clustering 
+
+In this I will attempt to group firms together based on their Gross claims incurred, this can provide us with groups that range from high risk (highest claims incurred) to lower risk (less claims incurred)
+
+
+```{python }
+
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans
+import numpy as np 
+import pandas as pd 
+import matplotlib.pyplot as plt
+
+df = pd.read_csv("underwriting.csv")
+claims = df[df['Variable'] == "Gross claims incurred (£m)"]
+
+cluster_data = claims.pivot_table(index='Firms', columns='Year', values ='value', fill_value=0)
+
+
+##Standardising the cluster data using StandardScalar 
+
+scaler = StandardScaler()
+
+cluster_data_scaled = scaler.fit_transform(cluster_data)
+
+
+# Find optimal number of clusters 
+
+wcss = []  # Within-cluster sum of squares
+for i in range(1, 11):
+    kmeans = KMeans(n_clusters=i, init='k-means++', max_iter=300, n_init=10, random_state=0)
+    kmeans.fit(cluster_data_scaled)
+    wcss.append(kmeans.inertia_)
+    
+plt.figure(figsize=(10, 6))
+plt.plot(range(1, 11), wcss)
+plt.title('Elbow Method for Optimal Number of Clusters')
+plt.xlabel('Number of clusters')
+plt.ylabel('WCSS')
+plt.show()
+
+```
+
+
+Using the elbow method above to determine the optimal number of clusters using the Within-Cluster sum of squares (WCSS is the sum of squares of the distances of each data point in all clusters to their respective centroids) against the number of clusters. Looking for the elbow point above (where the WCSS begins to decrease at a slower rate) which represents the balance between the number of clusters and the sum of the squared distances within each clusters. 
+
+Based on the plot above it is reasonable to choose between 3/4 clusters. For the purposes of this report I will choose 3.
+
+```{python}
+
+kmeans = KMeans(n_clusters=3, init='k-means++', max_iter=300, n_init=10, random_state=0)
+cluster_labels = kmeans.fit_predict(cluster_data_scaled)
+
+# Adding the cluster labels to the original data
+cluster_data['Cluster'] = cluster_labels
+
+# Displaying a sample of the clustered data
+cluster_data['Cluster'].head()
+
+## Plotting scatter of previous 2 years
+plt.scatter(cluster_data.iloc[:, 4], cluster_data.iloc[:,3], c=cluster_data['Cluster'], cmap='viridis')
+plt.xlabel('2020')
+plt.ylabel('2019')
+plt.title('Gross claims incurred - grouped')
+plt.show()
+
+
+```
+After clustering into 3 groups, comparing the years 2020 vs 2019 - we can see 3 groups on the scatterplot above which largely shows group 1 (lowest risk) tends to be majority of the firms that fall into this category where the claims incurred remain fairly low (shown here in purple). 
+
+Group 2 , shown in yellow, tends to be firms that have a moderate levels of claims incurred and could be useful to monitor these firms in particular as they can be considered somewhat of a risk especialy those further away on the plot borderlining the group 3 firms. 
+
+Group 3 only 2 firms are appearing here and its likely that they are outliers in the dataset so these will need further investigation. 
+
+
+Whilst I've plotted the two years I would also perform the same methods on variables largely related to each other. 
+
+## Conclusion
+
+
+This report highlighted some key features to focus on when analysing the 325 insurance firms within the 2016-2020 period. 
+
+The team should primarily focus on characteristics of firms as below: 
+
+- Big firms with unusual changes in their Gross Written premium Year on year growth.  
+
+- Firms with large gross claims incurred. This can indicate that firms are taking on riskier business and thus receive more claims which can lead to an unstable position. As above using the clustering techniques these have been categorised into 3 main groups. They should focus on firms that are classed within the risk group 2 and 3.  
+
+- Firms with a large net combined ratio. Large figures above 100% could indicate that insurers are running at a loss which coupled with their SCR coverage ratios could determine how well these firms fare in the face of harsh conditions. 
+
+
+## Question 3 
+
+1. Data Ingestion and Storage
+
+For Data ingestion, Azure Data factory could be used, its a data integration service that allows us to create and schedule ETL workflows. It seamlessly connects to various data sources such as databases or even azure blob storage. It can also handle large volumes of data for daily batch processing which are subsequently handled by automatic scheduled pipelines to ensure the latest data is ingested into the workflow without any effort required. 
+
+For Data storage, Azures Blob storage is a perfect solution - it is a scalable and cost effective storage solution. It is designed to handle large volumnes of unstructured data - allowing any new data that becomes available to be seamlessly stored alongside existing data whether this is structured or unstructured. 
+
+
+2. Data processeing and transformation
+
+
+Azure Databricks:
+Databricks service on Azure offers an integreated environment with Spark which can allow for big data processing and analysis. This service is typically one that is used by the Data Engineers and Data Scientists. This service can also be used to clean, further process and transform the daily data to prep it for enhanced analysis by Machine Learning models. 
+
+
+Alternatively Azure ML service also offers similar features to databricks which can also be used although typically Azure ML is usually used when training models with limited data. Whilst it does provide clusters to work with the data distribution must be handled via code whereas Databricks is already designed with large data in mind. 
+
+
+
+
+3. Reporting and Visualization
+ Power BI:
+
+Power BI is a suite of business analytics tools that lets you analyze data and share insights. With Power BI, you can create a range of visualizations, reports, and dashboards.
+It can connect directly to data in Azure Blob Storage, and other Azure data services, providing real time visualisations and insights from the processed data and shared easily between teams and colleagues. 
+
+Further tools: 
+
+Power platform is a powerful suite of tools which could further enhance the user experience. Apps such as virtual agents could potentially be used to create bots that the user can interactively query the data especially where reporting tools in powerBI may not have a specific view/interest set up. 
+
 

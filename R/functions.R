@@ -56,7 +56,8 @@ clean_data <- function(df, type = c("long", "wide")){
   
 }
 
-
+## Function to calculate changes and % change on a dataframe on all numeric columns
+## Known issues where changes will be calculated on the change previous created. 
 calculate_changes <- function(df){
   
   df <- df %>% 
@@ -70,17 +71,28 @@ calculate_changes <- function(df){
 }
 
 
-outlier_detector <- function(df, column){
+outlier_detector <- function(df){
   
-  Q1 <- quantile(df[[column]], 0.25, na.rm=TRUE)
-  Q3 <- quantile(df[[column]], 0.75, na.rm=TRUE)
-  IQR <- Q3 - Q1
   
-  lower <- Q1 - 1.5 * IQR
-  upper <- Q3 + 1.5 * IQR
+  outlier_column <- function(column){
+    Q1 <- quantile(column, 0.25, na.rm=TRUE)
+    Q3 <- quantile(column, 0.75, na.rm=TRUE)
+    IQR <- Q3 - Q1
+    
+    lower <- Q1 - 1.5 * IQR
+    upper <- Q3 + 1.5 * IQR
+    
+    return(column < lower | column > upper)
+    
+    
+  }
   
-  outliers <- df %>% 
-    filter(df[[column]] < lower | df[[column]] > upper)
+  ## Apply function to each column in dataset where its numeric
   
-  return(outliers)
+  df <- df %>% 
+    mutate(across(where(is.numeric), ~outlier_column(.), .names = "Outlier_{col}"))
+  
+
+  
+  return(df)
 }
